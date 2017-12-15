@@ -1,0 +1,6 @@
+name: 'Calendar timezone overrider'
+type: module
+description: 'Custom script for correcting timezones in specific views.'
+package: Views
+version: '8.0.0'
+core: '8.x'

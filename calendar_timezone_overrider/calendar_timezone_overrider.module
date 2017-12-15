@@ -1,0 +1,51 @@
+<?php
+
+function calendar_timezone_overrider_views_query_alter($view, $query) {
+
+  // Only perform this query alter for the calendar day display.
+  if ($view->current_display == 'page_day') {
+
+    // Loop through statements in this query.
+    foreach ($query->where as $statement_key => $statement) {
+
+      // Loop through conditions within this statement.
+      foreach ($statement['conditions'] as $condition_key => $condition) {
+
+        // If this condition is a formula...
+        if ($condition['operator'] == 'formula') {
+
+          // If this condition formula uses the date format function...
+          if (strpos($condition['field'], 'DATE_FORMAT') !== false) {
+
+            // Retrieve this condition's current field value for modification.
+            $condition_field = $query->where[$statement_key]['conditions'][$condition_key]['field'];
+
+              $timezone_local = new DateTimeZone('America/New_York');
+              $timezone_utc = new DateTimeZone('UTC');
+
+              $datetime_local = new DateTime('now', $timezone_local);
+              $datetime_utc = new DateTime('now', $timezone_utc);
+
+              $offset_in_seconds = timezone_offset_get ( $timezone_local , $datetime_local );
+
+              if ($offset_in_seconds == -18000) {
+                $offset = '-05:00';
+              } else {
+                $offset = '-04:00';
+              }
+
+              // Rewrite formula to use offset.
+              $condition_field = "DATE_FORMAT(CONVERT_TZ(node__field_date_event.field_date_event_value, '+00:00', '" . $offset . "'), '%Y%m%d') = :node__field_date_event_field_date_event_value_full_date";
+
+            // Substitute the original field value for the modified one.
+            $query->where[$statement_key]['conditions'][$condition_key]['field'] = $condition_field;
+
+          }
+
+        }
+      }
+    }
+
+  }
+
+}
